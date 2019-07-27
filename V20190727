@@ -1,0 +1,52 @@
+// Arduino pin numbers
+const int Button_pin = 7; // digital pin connected to button output
+const int joystickX_pin = A0; // analog pin connected to X output
+const int joystickY_pin = A2; // analog pin connected to Y output
+int servoX_pin = 2; // digital pin connected to servo X 
+int servoY_pin = 3; // digital pin connected to servo  Y
+int LaserPin = 9; // digital pin connected to the laser
+
+// Setting up the servo's
+#include <Servo.h>
+Servo servoX;
+Servo servoY;
+
+// Variables
+int valX;    // variable to read the value from the analog pin
+int valY;    // variable to read the value from the analog pin
+int LedState = 0; // variable for the switchstate
+
+void setup() {
+  // put your setup code here, to run once:
+  // Setting pins to in/output
+  pinMode(Button_pin, INPUT);
+  pinMode(joystickX_pin, INPUT);
+  pinMode(joystickY_pin, INPUT);
+  pinMode(LaserPin, OUTPUT);
+
+  //connecting servo's
+  servoX.attach (servoX_pin); 
+  servoY.attach (servoY_pin); 
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  valX = analogRead(float(joystickX_pin));            // reads the value of the potentiometer (value between 0 and 1023)
+  valX = map(valX, 0, 1023, 0, 180);     // scale it to use it with the servo (value between 0 and 180)
+  servoX.write(valX);                  // sets the servo position according to the scaled value
+  delay(30);
+
+  valY = analogRead(float(joystickY_pin));            // reads the value of the potentiometer (value between 0 and 1023)
+  valY = map(valY, 0, 1023, 0, 180);     // scale it to use it with the servo (value between 0 and 180)
+  servoY.write(valY);                  // sets the servo position according to the scaled value
+  delay(30);
+
+  LedState = digitalRead(Button_pin); // reads the value of the switch
+  if (LedState == HIGH) {
+    digitalWrite(LaserPin, HIGH); // turns the laser on
+    } else {
+    digitalWrite(LaserPin, LOW); // turns the laser off
+    }
+
+}
