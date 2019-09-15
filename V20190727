@@ -1,3 +1,7 @@
+//Smoothing in this script inspired by: kasperkamperman.com (https://www.kasperkamperman.com/blog/arduino/arduino-programming-map-and-smooth/)
+
+//Script to run a laser-pointer-turret, controlled by a joystick.
+
 // Arduino pin numbers
 const int Button_pin = 7; // digital pin connected to button output
 const int joystickX_pin = A0; // analog pin connected to X output
@@ -15,6 +19,10 @@ Servo servoY;
 int valX;    // variable to read the value from the analog pin
 int valY;    // variable to read the value from the analog pin
 int LedState = 0; // variable for the switchstate
+// Variables for smoothing the joystick-input
+int smoothedvalX     = 0;    // smoothed result for the x-input
+int smoothedvalY     = 0;    // smoothed result for the y-input
+int samples         = 5;    // amount of samples
 
 void setup() {
   // put your setup code here, to run once:
@@ -33,20 +41,22 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   valX = analogRead(float(joystickX_pin));            // reads the value of the potentiometer (value between 0 and 1023)
-  valX = map(valX, 0, 1023, 0, 180);     // scale it to use it with the servo (value between 0 and 180)
-  servoX.write(valX);                  // sets the servo position according to the scaled value
-  delay(30);
+  smoothedvalX = smoothedvalX + ((valX - smoothedvalX)/samples);
+  smoothedvalX = map(smoothedvalX, 0, 1023, 0, 180);  // scale it to use it with the servo (value between 0 and 180)
+  servoX.write(smoothedvalX);                         // sets the servo position according to the scaled value
 
   valY = analogRead(float(joystickY_pin));            // reads the value of the potentiometer (value between 0 and 1023)
-  valY = map(valY, 0, 1023, 0, 180);     // scale it to use it with the servo (value between 0 and 180)
-  servoY.write(valY);                  // sets the servo position according to the scaled value
-  delay(30);
+  smoothedvalY = smoothedvalY + ((valY - smoothedvalY)/samples);
+  smoothedvalY = map(smoothedvalY, 0, 1023, 0, 180);  // scale it to use it with the servo (value between 0 and 180)
+  servoY.write(smoothedvalY);                         // sets the servo position according to the scaled value
 
-  LedState = digitalRead(Button_pin); // reads the value of the switch
+  LedState = digitalRead(Button_pin);                 // reads the value of the switch
   if (LedState == HIGH) {
-    digitalWrite(LaserPin, HIGH); // turns the laser on
+    digitalWrite(LaserPin, HIGH);                     // turns the laser on
     } else {
-    digitalWrite(LaserPin, LOW); // turns the laser off
+    digitalWrite(LaserPin, LOW);                      // turns the laser off
     }
+    
+  delay(30);
 
 }
