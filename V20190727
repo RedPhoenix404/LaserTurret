@@ -1,5 +1,3 @@
-//Smoothing in this script inspired by: kasperkamperman.com (https://www.kasperkamperman.com/blog/arduino/arduino-programming-map-and-smooth/)
-
 //Script to run a laser-pointer-turret, controlled by a joystick.
 
 // Arduino pin numbers
@@ -20,9 +18,15 @@ int valX;    // variable to read the value from the analog pin
 int valY;    // variable to read the value from the analog pin
 int LedState = 0; // variable for the switchstate
 // Variables for smoothing the joystick-input
+const int numReadings = 10;  // value to determine the size of the readings array
 int smoothedvalX     = 0;    // smoothed result for the x-input
+int totalX = 0;                  // the running total
+int Xreadings[numReadings];      // the readings from the analog input
+int XreadIndex = 0;              // the index of the current reading
 int smoothedvalY     = 0;    // smoothed result for the y-input
-int samples         = 5;    // amount of samples
+int totalY = 0;                  // the running total
+int Yreadings[numReadings];      // the readings from the analog input
+int YreadIndex = 0;              // the index of the current reading
 
 void setup() {
   // put your setup code here, to run once:
@@ -36,25 +40,49 @@ void setup() {
   servoX.attach (servoX_pin); 
   servoY.attach (servoY_pin); 
 
+  for (int thisReading = 0; thisReading < numReadings; thisReading++) {
+    Xreadings[thisReading] = 0;}
+  for (int thisReading = 0; thisReading < numReadings; thisReading++) {
+    Yreadings[thisReading] = 0;}
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  valX = analogRead(float(joystickX_pin));            // reads the value of the potentiometer (value between 0 and 1023)
-  smoothedvalX = smoothedvalX + ((valX - smoothedvalX)/samples);
-  smoothedvalX = map(smoothedvalX, 0, 1023, 0, 180);  // scale it to use it with the servo (value between 0 and 180)
-  servoX.write(smoothedvalX);                         // sets the servo position according to the scaled value
+void loop() {                                           // put your main code here, to run repeatedly:
 
-  valY = analogRead(float(joystickY_pin));            // reads the value of the potentiometer (value between 0 and 1023)
-  smoothedvalY = smoothedvalY + ((valY - smoothedvalY)/samples);
-  smoothedvalY = map(smoothedvalY, 0, 1023, 0, 180);  // scale it to use it with the servo (value between 0 and 180)
-  servoY.write(smoothedvalY);                         // sets the servo position according to the scaled value
+  // X-Joystick/servo setting
+  totalX = totalX - Xreadings[XreadIndex];              // subtract the last reading:
+  Xreadings[XreadIndex] = analogRead(joystickX_pin);    // reads the value of the potentiometer (value between 0 and 1023)
+  totalX = totalX + Xreadings[XreadIndex];              // add the reading to the total:
+  XreadIndex = XreadIndex + 1;                          // advance to the next position in the array:
 
-  LedState = digitalRead(Button_pin);                 // reads the value of the switch
+  if (XreadIndex >= numReadings) {                      // if we're at the end of the array...
+    XreadIndex = 0;                                     // ...wrap around to the beginning:
+  }
+
+  smoothedvalX = totalX / numReadings;                   // calculate the average:
+  smoothedvalX = map(smoothedvalX, 0, 1023, 0, 180);    // scale it to use it with the servo (value between 0 and 180)
+  
+  servoX.write(smoothedvalX);                           // sets the servo position according to the scaled value
+
+  // Y-Joystick/servo setting
+  totalY= totalY - Yreadings[YreadIndex];              // subtract the last reading:
+  Yreadings[YreadIndex] = analogRead(joystickY_pin);    // reads the value of the potentiometer (value between 0 and 1023)
+  totalY= totalY + Yreadings[YreadIndex];              // add the reading to the total:
+  YreadIndex = YreadIndex + 1;                          // advance to the next position in the array:
+
+  if (YreadIndex >= numReadings) {                      // if we're at the end of the array...
+    YreadIndex = 0;                                     // ...wrap around to the beginning:
+  }
+
+  smoothedvalY = totalY / numReadings;                   // calculate the average:
+  smoothedvalY = map(smoothedvalY, 0, 1023, 0, 180);    // scale it to use it with the servo (value between 0 and 180)
+  
+  servoY.write(smoothedvalY);                           // sets the servo position according to the scaled value
+
+  LedState = digitalRead(Button_pin);                   // reads the value of the switch
   if (LedState == HIGH) {
-    digitalWrite(LaserPin, HIGH);                     // turns the laser on
+    digitalWrite(LaserPin, HIGH);                       // turns the laser on
     } else {
-    digitalWrite(LaserPin, LOW);                      // turns the laser off
+    digitalWrite(LaserPin, LOW);                        // turns the laser off
     }
     
   delay(30);
